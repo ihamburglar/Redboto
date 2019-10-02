@@ -25,58 +25,87 @@
 # TODO: take aws configs as a parameter
 # TODO: optionally write to a file
 # TODO: Put stuff in functions
+# TODO: Doesn't enumerate role info currentlys
+# TODO: May need to paginate for large permission sets?
 # Pull requests accepted
 
 #imports
 from __future__ import print_function
-import getpass, boto3
+import getpass, boto3, re
+import argparse
+
+parser = argparse.ArgumentParser(description='Checks AWS API keys.')
+parser.add_argument('--profile')
+
+args = parser.parse_args()
 
 print('This script checks the validity of AWS API keys')
 print('and provides some basic info about them.')
+if args.profile:
+    # Open iam client
+    session = boto3.Session(profile_name=args.profile)
+    iam_client = session.client('iam')
+else:
+    # Get creds
+    access_id = getpass.getpass(prompt='What is the AWS Key ID? ')
+    access_key = getpass.getpass(prompt='What is the AWS Key Secret? ')
 
-# Get creds
-access_id = getpass.getpass(prompt='What is the AWS Key ID? ')
-access_key = getpass.getpass(prompt='What is the AWS Key Secret? ')
+    # Open iam client
+    iam_client = boto3.client('iam', aws_access_key_id=access_id, aws_secret_access_key=access_key)
 
-print("    [*] Checking the key " +access_id)
-
-# Open iam client
-iam_client = boto3.client('iam', aws_access_key_id=access_id, aws_secret_access_key=access_key)
+print("    [*] Checking the keys")
 
 # Test if keys are valid by finding current user and if not valid, exit
 try:
     user = iam_client.get_user()
-    print('The key: ' + access_id + ' appears to be valid')
+    print('        [-] The keys appears to be valid')
 except:
-    print('The key: ' + access_id + ' does not appear to be valid')
+    print('        [-] The keys do not appear to be valid')
     exit()
 
 # Get username associated with keys
 username = user['User']['UserName']
 
-# List policies
-# Won't list any if none
-policies = iam_client.list_user_policies(UserName=username)
-for policy in policies['PolicyNames']:
-    print('The user \"' + username +'\" has the following policies:')
-    print(policy)
-    print('[*] Policy: ' + policy['PolicyName'])
+# this loads a bunch of info about user from iam
+details = iam_client.get_account_authorization_details(Filter=['User','Group'])
 
-# List groups
-# Won't list any if none
-groups = iam_client.list_groups_for_user(UserName=username)
-for group in groups['Groups']:
-    print('The user \"' + username +'\" has the following groups:')
-    print('    [*] Group: ' + group['GroupName'])
+if details['GroupDetailList']:
+    # this pulls out the group details
+    grouplist = details['GroupDetailList']
+
+    # this section lists the policies attached via groups
+    print('The user \"' + username +'\" has the following policies attached because of group membership:')
+    for group in grouplist:
+        for policy in group['AttachedManagedPolicies']:
+            policyname = policy['PolicyName']
+            groupname = group['GroupName']
+            print('    [*] The group ' + groupname + ' attches the following policy:')
+            print('        [-] ' + policyname)
+
+if details['UserDetailList']:
+    for userdetails in details['UserDetailList']:
+        # this section lists the policies attached directly and then specifies inline policies
+        print('The user \"' + username +'\" has the following policies attached directly to their account:')
+        for policy in userdetails['AttachedManagedPolicies']:
+                policyname = policy['PolicyName']
+                print('        [-] ' + policyname)
+
+        #TODO there must be a better way
+        try:
+            # this section lists the policies attached directly
+            print('The user \"' + username +'\" has the following inline policies directly to their account:')
+
+            for policy in userdetails['UserPolicyList'][0]['PolicyDocument']['Statement'][0]['Action']:
+                print('        [-] ' + policy)
+        except KeyError:
+            pass
+
 
 # List if they have MFA device(s) configured
-# *Should* tell if they don't
 mfas = iam_client.list_mfa_devices(UserName=username)
-for mfa in mfas['MFADevices']:
-    print('Does the user: \"' + username +'\" have MFA configured?')
-    # Not 100% sure this does what I want in the case of no mfa
-    # My guess is it will crash before giving an fpositive
-    if mfa == "":
-        print("    [*] MFA Device is NOT configured")
-    else:
+if mfas['MFADevices'] == []:
+    print("    [*] MFA Device is NOT configured")
+else:
+    for mfa in mfas['MFADevices']:
         print("    [*] MFA Device is configured")
+
