@@ -30,6 +30,7 @@ You can describe-instances with the AWS cli, however it returns ugly json.  This
 a subset(but growing) of what describe-instances does, however it is much more readable.
 
 describeDeletedItems.py
+----------
 describeDeletedItems.py lists items with delete markers and each of their corresponding versionIds.  Currently doesn't list all items in a bucket with more than 1000 versionIds.
 
 Pull reuqests accepted!
