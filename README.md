@@ -13,6 +13,10 @@ getEC2WinCreds.py
 
 If you have the right API key and .pem you can download and decrypt the intial Windows password for an instance.
 
+getEC2Files.py
+----------
+Certainly the most complicated script of the bunch.  This script works well in conjunction with describeInstances.py which gives you metadata about instances in EC2.  With a very well permission API key you can exflitrate files from an EC2 instance.  The script takes a snapshot of a target volume, spins up an instance to attach to the volume, spins up and creates an S3 bucket, when the instance finishes launching it encrypts and copies the chosen files to the s3 bucket, the script pulls down from the S3 bucket and decrypts the files.  The script then tears down the infrastructure that it has created, leaving only logs behind, if enabled.
+
 checkAWSKey.py
 ----------
 
