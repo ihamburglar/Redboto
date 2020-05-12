@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # TODO: Better API Key Support?
 # API keys currently are loaded from a profile
+# Better secret key handling?
 # TODO: Better error handling
 import boto3
 
@@ -13,9 +14,16 @@ regions = [region['RegionName'] for region in ec2.describe_regions()['Regions']]
 
 #Iterate through each region and check for the prescense of trails
 #Probably need to do better error checking
+#Pull requests accepted!
 for region in regions:
     cloudtrail = boto3.client('cloudtrail', region)
     if not cloudtrail.describe_trails()['trailList']:
         print("[*] Region " + region + " doesn't appear to have Cloudtrails or you don't have permission")
     else:
-        print("[-] Region" + region + " appears to have Cloudtrails")
+        print("[-] Region " + region + " appears to have Cloudtrails")
+        for trail in cloudtrail.describe_trails()['trailList']:
+            print("    [+] Found a cloudtrail named: " + trail['Name'] + " in a bucket named: " + trail['S3BucketName'])
+            if trail['LogFileValidationEnabled'] is True:
+                print("        [+] Cloudtrail named: " + trail['Name'] + " has validation enabled.")
+            else:
+                print("        [+] Cloudtrail named: " + trail['Name'] + " does not have validation enabled.")
