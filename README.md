@@ -37,4 +37,12 @@ describeDeletedItems.py
 ----------
 describeDeletedItems.py lists items with delete markers and each of their corresponding versionIds.  Currently doesn't list all items in a bucket with more than 1000 versionIds.
 
+describeUserData.py
+----------
+describeUserData.py lists the userData attribute of instances.  You can think of this as the startup script of the virtual machine.
+
+describeConsoleScreenshot.py
+----------
+describeConsoleScreenshot.py iterates through instances in each region and prints the screenshots of each instance that is running.
+
 Pull reuqests accepted!
