@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# Original Author @elitest
+# This script is part of RedDolphin
+# https://github.com/elitest/RedDolphin/
+
+# This script uses boto3 and texttable to print
+# userData from EC2 instances from each region
+
 # TODO: Better API Key Support?
 # API keys currently are loaded from a profile
 # Better secret key handling?
