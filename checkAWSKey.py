@@ -60,7 +60,7 @@ try:
     user = iam_client.get_user()
     print('        [-] The keys appears to be valid')
 except:
-    print('        [-] The keys do not appear to be valid')
+    print('        [-] The keys do not appear to be valid or do not have enough permissions to determine validity')
     exit()
 
 # Get username associated with keys
