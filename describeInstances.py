@@ -11,7 +11,7 @@
 # Add control over which attributes are printed
 # Add the ability to specify profile and region
 
-import boto3, json, argparse
+import boto3, json, argparse, botocore.exceptions, sys
 from texttable import Texttable
 
 argparser = argparse.ArgumentParser(description='Copies Registry Hives from a running system to an s3 bucket')
@@ -54,19 +54,38 @@ def generate_table(region):
     else:
         print('  No instances found in this region\n')
 
-if args.region is not None:
     print("checking region: "+args.region + "\n")
-    try:
-        generate_table(args.region)
-    except:
-    	print("Your specified region does not exist, or something else went wrong.")
+
+if args.region is not None:
+    regions = {}
+    regions = [{'RegionName': '%s' % args.region}]
 else:
     #connection stricly to get regions
     client = boto3.client(service_name='ec2', region_name='us-east-1')
     regions = client.describe_regions()['Regions']
-    #Iterate through the regions
-    #for region in regions:
-    for region in regions:
+    print(regions)
+#Iterate through the regions
+#for region in regions:
+for region in regions:
 
-        print("checking region: "+region['RegionName'] + "\n")
+    print("checking region: "+region['RegionName'] + "\n")
+    try:
         generate_table(region['RegionName'])
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'UnauthorizedOperation':
+            print('Are you sure you have the right permissions?  Check IAM.')
+        elif error.response['Error']['Code'] == 'AuthFailure':
+            print('Your keys may be invalid.  Perhaps they have been rotated?')
+        #Something else happened here print the error code for inclusion above
+        else:
+            print(error.response['Error']['Code'])
+    except botocore.exceptions.EndpointConnectionError as error:
+        # Attempted to reach out to an invalid S3 endpoint
+        print('Invalid region.  Check that you have specified a region that exists')
+    except TypeError:
+        # This is the case where no instances were found.
+        # Too broad of an excaption perhaps?
+        pass
+    except:
+        # catch all exception
+        print("I'm not sure what happened here.  Something else went wrong.",sys.exc_info())
