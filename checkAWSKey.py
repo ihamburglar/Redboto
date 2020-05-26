@@ -43,8 +43,10 @@ print('This script checks the validity of AWS API keys')
 print('and provides some basic info about them.')
 if args.profile:
     # Open iam client
-    session = boto3.Session(profile_name=args.profile)
-    iam_client = session.client('iam')
+    boto3.setup_default_session(profile_name=args.profile)
+    iam_client = boto3.client('iam')
+    # Open sts client
+    sts_client = boto3.client('sts')
 else:
     # Get creds
     access_id = getpass.getpass(prompt='What is the AWS Key ID? ')
@@ -52,13 +54,17 @@ else:
 
     # Open iam client
     iam_client = boto3.client('iam', aws_access_key_id=access_id, aws_secret_access_key=access_key)
+    # Open sts client
+    sts_client = boto3.client('sts', aws_access_key_id=access_id, aws_secret_access_key=access_key) 
+
 
 print("    [*] Checking the keys")
 
 # Test if keys are valid by finding current user and if not valid, exit
 try:
     user = iam_client.get_user()
-    print('        [-] The keys appears to be valid')
+    accountnum = sts_client.get_caller_identity()['Account']
+    print('        [-] The keys appears to be valid for account: ' + accountnum )
 except:
     print('        [-] The keys do not appear to be valid or do not have enough permissions to determine validity')
     exit()
