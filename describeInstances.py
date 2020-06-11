@@ -15,7 +15,7 @@ import boto3, json, argparse, botocore.exceptions, sys
 from texttable import Texttable
 
 # Sets up the argument parser
-argparser = argparse.ArgumentParser(description='Copies Registry Hives from a running system to an s3 bucket')
+argparser = argparse.ArgumentParser(description='Describe instances in EC2 in a table')
 argparser.add_argument('--profile', default='default', help='The profile name in ~/.aws/credentials')
 argparser.add_argument('--region', help='The region you want to describe instances of.  If not used, then all are listed.')
 argparser.add_argument('--network', action='store_true', help='Includes IP addresses in the output.')
