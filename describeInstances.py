@@ -14,48 +14,97 @@
 import boto3, json, argparse, botocore.exceptions, sys
 from texttable import Texttable
 
+# Sets up the argument parser
 argparser = argparse.ArgumentParser(description='Copies Registry Hives from a running system to an s3 bucket')
 argparser.add_argument('--profile', default='default', help='The profile name in ~/.aws/credentials')
 argparser.add_argument('--region', help='The region you want to describe instances of.  If not used, then all are listed.')
+argparser.add_argument('--network', action='store_true', help='Includes IP addresses in the output.')
+argparser.add_argument('--volume', action='store_true', help='Include volume information in the output.')
 args = argparser.parse_args()
 
-boto3.setup_default_session(profile_name=args.profile)
+if args.profile:
+    boto3.setup_default_session(profile_name=args.profile)
 
+# This function pulls the information out of the EC2 instance and builds the table
 def generate_table(region):
     ec2 = boto3.client(service_name='ec2', region_name=region)
     response = ec2.describe_instances()
-    table = Texttable()
-    table.set_cols_align(["c", "c", "c", "c", "c"])
-    table.set_cols_valign(["m", "m", "m", "m", "m"])
-    #tablearray = []
-    #tablearray.append(["Instance ID", "Name", "State", "VolumeId"])
+
+    # Initialize the table unlimited width
+    table = Texttable(max_width=0)
+
+    # This is basically a builder for the width of the array used to build the table.
+    tableWidth = 3
+    if args.network:
+         tableWidth +=2
+    if args.volume:
+         tableWidth +=2
+    table.set_cols_align(tableWidth*["c"])
+    table.set_cols_valign(tableWidth*["m"])
+
+    # This is a builder for the names of the head of the table
+    headerList = ["Instance ID", "Name", "State"]
+
+    if args.volume:
+        headerList += ["VolumeId","DeviceName"]
+    if args.network:
+        headerList += ["Private IPs", "Public IPs"]
+    table.header(headerList)
+
+    # If we get reservations iterate through them
     if response['Reservations']:
-        table.header(["Instance ID", "Name", "State", "VolumeId", "DeviceName"])
         for r in response['Reservations']:
             for i in r['Instances']:
                 instanceid = i['InstanceId']
-                ec2 = boto3.resource('ec2', region)
-                Instance = ec2.Instance(i['InstanceId'])
+                # We actually need some information not accessible by the client
+                ec2Resource = boto3.resource('ec2', region)
+                Instance = ec2Resource.Instance(i['InstanceId'])
+
+                # Name of the instance otherwise blank
                 if Instance.tags:
                     for tag in Instance.tags:
                         if tag['Key'] == 'Name':
                             name = tag['Value']
-                #There may be another condition here
+                # There may be another condition here
                 else:
-                    name = " "
+                    name = ''
+
+                # State of the instance
                 state = i['State']['Name']
-                vs = ''
-                dn = ''
-                for d in i['BlockDeviceMappings']:
-                    vs = vs + d['Ebs']['VolumeId'] + '\n'
-                    dn = dn + d['DeviceName'] + '\n'
-                table.add_row([instanceid , name , state , vs, dn])
+
+                # This is the builder for the add_row function
+                rowList = [instanceid, name, state]
+
+                if args.volume:
+                    vs = ''
+                    dn = ''
+                    # Pull the device names
+                    for d in i['BlockDeviceMappings']:
+                        vs = vs + d['Ebs']['VolumeId'] + '\n'
+                        dn = dn + d['DeviceName'] + '\n'
+                    rowList += [vs,dn]
+
+                if args.network:
+                    # This pulls the IP addresses
+                    # There are instances which may not have IPs
+                    try:
+                        public = i['PublicIpAddress']
+                    except KeyError:
+                        public = ''
+                    try:
+                        private = i['PrivateIpAddress']
+                    except KeyError:
+                        private = ''
+                    rowList += [public,private]
+
+                # This adds the row
+                table.add_row(rowList)
+        # This draws the table
         print(table.draw() + "\n")
     else:
         print('  No instances found in this region\n')
 
-    print("checking region: "+args.region + "\n")
-
+# This is if a region is specified in args
 if args.region is not None:
     regions = {}
     regions = [{'RegionName': '%s' % args.region}]
@@ -63,7 +112,7 @@ else:
     #connection stricly to get regions
     client = boto3.client(service_name='ec2', region_name='us-east-1')
     regions = client.describe_regions()['Regions']
-    print(regions)
+
 #Iterate through the regions
 #for region in regions:
 for region in regions:
@@ -82,9 +131,10 @@ for region in regions:
     except botocore.exceptions.EndpointConnectionError as error:
         # Attempted to reach out to an invalid S3 endpoint
         print('Invalid region.  Check that you have specified a region that exists')
-    except TypeError:
+    except TypeError as error:
         # This is the case where no instances were found.
         # Too broad of an excaption perhaps?
+        print('exception is' +error)
         pass
     except:
         # catch all exception
