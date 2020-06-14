@@ -45,4 +45,8 @@ describeConsoleScreenshot.py
 ----------
 describeConsoleScreenshot.py iterates through instances in each region and prints the screenshots of each instance that is running.
 
+describeConsoleScreenshot.py
+----------
+runSSMShellScript.py runs a shell script on a linux host via SSM if installed and configured.
+
 Pull reuqests accepted!
