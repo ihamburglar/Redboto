@@ -43,14 +43,16 @@ platform = instanceInfo['InstanceInformationList'][0]['PlatformType']
 if platform == 'Windows':
     document = 'AWS-RunPowerShellScript'
     prompt = 'PS AWS:\\> '
+    badStatus = 'InProgress' 
     crlf = ''
 elif platform == 'Linux':
     document = 'AWS-RunShellScript'
     prompt = 'you@%s:$ ' % args.instanceid
+    badStatus = 'Pending'
     crlf = ' /\n'
 else:
-	print('Unknown platform, exiting')
-	quit()
+    print('Unknown platform, exiting')
+    quit()
 
 # This is the function that connects to SSM and runs the command
 def runCommand(command):
@@ -79,7 +81,7 @@ def runCommand(command):
         elif output['StatusDetails'] == 'InProgress':
             pass
         else:
-        	# This breaks us out of the while loop
+            # This breaks us out of the while loop
             processed = 0
         
     return(output['StandardOutputContent'])
