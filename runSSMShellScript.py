@@ -93,7 +93,7 @@ if args.commandfile:
     print(runCommand(script))
 else:
 
-    class HelloWorld(cmd.Cmd):
+    class CMDLoop(cmd.Cmd):
         intro = 'This isn\'t actually an interactive shell\n Ctrl+D to exit.'
         prompt = prompt
         def default(self, line):
@@ -103,4 +103,4 @@ else:
         def do_EOF(self, line):
             return True
 
-    HelloWorld().cmdloop()
+    CMDLoop().cmdloop()
