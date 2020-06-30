@@ -49,4 +49,4 @@ runSSMShellScript.py
 ----------
 runSSMShellScript.py runs a shell script on a Linux host or a PowerShell script on a Windows host via SSM if installed and configured.  The commands can be taken from a script or input directly via a semi-interactive shell.
 
-Pull reuqests accepted!
+Pull requests accepted!
