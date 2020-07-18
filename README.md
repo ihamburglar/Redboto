@@ -23,6 +23,10 @@ checkAWSKey.py
 Checks certain aspects of a key.  Valuable when checking if a key has been rotated or not,
 or if it has things like MFA have been turned on.
 
+createS3PresignedURL.py
+----------
+Creates S3 presigned URLs that can be read or written to with GET/POST requests without API keys(once signed).  This allows you to download or upload files from or to S3 without an AWS sdk or client.
+
 describeTrailStatus.py
 ----------
 
