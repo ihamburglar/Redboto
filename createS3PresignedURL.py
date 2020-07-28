@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Original Author @elitest
-# This script is part of RedDolphin
-# https://github.com/elitest/RedDolphin/
+# This script is part of Redboto
+# https://github.com/elitest/Redboto/
 
 # This script presigns URLs for S3 to access S3 URLs without API keys
 
