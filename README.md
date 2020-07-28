@@ -1,7 +1,7 @@
-RedDolphin
+Redboto
 ==========
 
-``RedDolphin`` is a collection of scripts that use the Amazon SDK for Python boto3 
+``Redboto`` is a collection of scripts that use the Amazon SDK for Python boto3 
 to perform red team operations against the AWS API.
 
 You can install the pre-requisite libraries with:
